@@ -18,18 +18,24 @@ def disassemble(hex_str: str, output_intel_syntax: bool = False) -> str:
         " ".join(args),
         syntax_id,
     )
-    stdout = subprocess.check_output(cmd, shell=True)
-    return stdout.decode("utf8")
+    result = subprocess.run(cmd, shell=True, capture_output=True)
+    return result.stdout.decode("utf8"), result.stderr.decode("utf8")
 
 
-def disassemble_hex(hex_str: str, output_intel_syntax: bool = False) -> list[str]:
-    output = disassemble(hex_str, output_intel_syntax=output_intel_syntax)
+def disassemble_hex(
+    hex_str: str, output_intel_syntax: bool = False, validate: bool = False
+) -> list[str]:
+    stdout, stderr = disassemble(hex_str, output_intel_syntax=output_intel_syntax)
     lines = []
-    for line in output.splitlines():
+    for line in stdout.splitlines():
         line = line.strip()
         if not line or line.startswith("."):
             continue
         lines.append(line)
+    if validate:
+        block = "\n".join(lines)
+        is_valid = "warning" not in stderr and "error" not in stderr
+        return (block, is_valid)
     return lines
 
 
